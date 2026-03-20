@@ -7,28 +7,24 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1️⃣ تحميل Tailscale CLI portable
-      - name: Download Tailscale CLI
+      # 1️⃣ تثبيت Tailscale عبر Chocolatey
+      - name: Install Tailscale
         run: |
-          Write-Host "Downloading Tailscale CLI..."
-          Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-cli/latest/tailscale-cli-windows-amd64.zip" -OutFile "tailscale.zip"
-          Expand-Archive tailscale.zip -DestinationPath "tailscale"
+          choco install tailscale -y
+          refreshenv  # تحديث PATH داخل الخطوة نفسها
 
       # 2️⃣ تشغيل Tailscale مع AuthKey
-      - name: Start Tailscale with AuthKey
+      - name: Start Tailscale
         run: |
-          $tailscaleExe = Join-Path $PWD "tailscale\tailscale.exe"
           $authKey = "kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV"
           $hostname = "github-vps"
-
           Write-Host "Starting Tailscale..."
-          & $tailscaleExe up --authkey $authKey --hostname $hostname
+          tailscale up --authkey $authKey --hostname $hostname
 
       # 3️⃣ التحقق من اتصال Tailscale
       - name: Verify Tailscale Connection
         run: |
-          $tailscaleExe = Join-Path $PWD "tailscale\tailscale.exe"
-          $status = & $tailscaleExe status
+          $status = tailscale status
           if ($status -match "100\..*") {
               Write-Host "✅ Tailscale is connected successfully."
           } else {
@@ -46,19 +42,17 @@ jobs:
       # 5️⃣ حلقة لضمان الاتصال المستمر
       - name: Keep Tailscale Connected
         run: |
-          $tailscaleExe = Join-Path $PWD "tailscale\tailscale.exe"
           $authKey = "kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV"
           $hostname = "github-vps"
-
           Write-Host "Starting continuous Tailscale monitoring..."
           while ($true) {
               try {
-                  $status = & $tailscaleExe status
+                  $status = tailscale status
                   if ($status -match "100\..*") {
                       Write-Host "$(Get-Date -Format G) - ✅ Tailscale connected."
                   } else {
                       Write-Host "$(Get-Date -Format G) - ⚠️ Tailscale disconnected. Reconnecting..."
-                      & $tailscaleExe up --authkey $authKey --hostname $hostname
+                      tailscale up --authkey $authKey --hostname $hostname
                   }
               } catch {
                   Write-Host "$(Get-Date -Format G) - ❌ Error checking Tailscale status. Retrying..."
