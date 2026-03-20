@@ -1,4 +1,4 @@
-name: Tailscale Connect Workflow
+name: Tailscale Windows Connect
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   connect:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       # 1️⃣ Checkout repository
@@ -21,18 +21,25 @@ jobs:
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          ping: "a06-de-monam.tailabd540.ts.net"   # الجهاز المستهدف داخل Tailnet
+          ping: "a06-de-monam.tailabd540.ts.net"
 
-      # 3️⃣ التحقق من الاتصال بالجهاز
+      # 3️⃣ التحقق من الاتصال بالجهاز داخل Tailnet
       - name: Verify Tailscale Connection
         run: |
           echo "Checking connection to Tailnet host..."
           tailscale status
           tailscale ping a06-de-monam.tailabd540.ts.net
 
-      # 4️⃣ تنفيذ أوامر على الجهاز داخل Tailnet
+      # 4️⃣ إنشاء مستخدم RDP بصلاحيات المسؤول (اختياري)
+      - name: Enable RDP
+        run: |
+          net user runneradmin Pass123! /add
+          net localgroup administrators runneradmin /add
+          echo "✅ RDP user created"
+
+      # 5️⃣ تنفيذ أوامر على الجهاز داخل Tailnet
       - name: Run commands on Tailnet host
         run: |
           echo "✅ Connected successfully to a06-de-monam.tailabd540.ts.net"
-          # هنا يمكنك إضافة أي أوامر تريد تنفيذها على VPS
-          # مثال: curl, ssh, أو أي script
+          # مثال: تشغيل أوامر PowerShell أو CMD على VPS
+          # يمكنك هنا إضافة أي أمر تحتاجه
