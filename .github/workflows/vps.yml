@@ -1,4 +1,4 @@
-name: Tailscale Windows Connect with Ephemeral Auth Key
+name: Tailscale Windows Connect via OAuth Client
 
 on:
   workflow_dispatch:
@@ -8,29 +8,36 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Connect Tailscale
+      # 2️⃣ Connect Tailscale باستخدام OAuth client
+      - name: Connect Tailscale via OAuth Client
         uses: tailscale/github-action@v4
         with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}  # Ephemeral Reusable Auth Key
-          tags: "tag:github-runner"                  # ✅ تصحيح الصيغة
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}       # Client ID
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}      # Client secret
+          tags: "tag:github-runner"                                        # tag يبدأ بـ tag:
           hostname: "github-vps"
           ping: "a06-de-monam.tailabd540.ts.net"
 
-      - name: Verify Connection
+      # 3️⃣ التحقق من الاتصال بالجهاز
+      - name: Verify Tailscale Connection
         run: |
+          echo "Checking connection to Tailnet host..."
           tailscale status
           tailscale ping a06-de-monam.tailabd540.ts.net
 
+      # 4️⃣ إنشاء مستخدم RDP بصلاحيات المسؤول (اختياري)
       - name: Enable RDP
         run: |
           net user runneradmin Pass123! /add
           net localgroup administrators runneradmin /add
           echo "✅ RDP user created"
 
+      # 5️⃣ تنفيذ أوامر PowerShell على VPS داخل Tailnet
       - name: Run commands on Tailnet host
         run: |
           echo "✅ Connected successfully to a06-de-monam.tailabd540.ts.net"
-          # هنا يمكن إضافة أي أوامر PowerShell أو SSH على VPS
+          # مثال: أي أوامر PowerShell أو CMD على الجهاز
