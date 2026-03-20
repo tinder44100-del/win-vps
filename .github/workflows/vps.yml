@@ -1,4 +1,4 @@
-name: Tailscale Windows Connect
+name: Tailscale Windows Connect with OAuth
 
 on:
   workflow_dispatch:
@@ -16,14 +16,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Connect Tailscale باستخدام Action الرسمي
-      - name: Connect Tailscale
+      # 2️⃣ Connect Tailscale باستخدام OAuth API token
+      - name: Connect Tailscale via OAuth
         uses: tailscale/github-action@v4
         with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          ping: "a06-de-monam.tailabd540.ts.net"
+          oauth_token: ${{ secrets.TAILSCALE_OAUTH_TOKEN }}  # ضع هنا توكنك في GitHub Secrets
+          ping: "a06-de-monam.tailabd540.ts.net"            # الجهاز داخل Tailnet
 
-      # 3️⃣ التحقق من الاتصال بالجهاز داخل Tailnet
+      # 3️⃣ التحقق من الاتصال بالجهاز
       - name: Verify Tailscale Connection
         run: |
           echo "Checking connection to Tailnet host..."
@@ -37,9 +37,9 @@ jobs:
           net localgroup administrators runneradmin /add
           echo "✅ RDP user created"
 
-      # 5️⃣ تنفيذ أوامر على الجهاز داخل Tailnet
+      # 5️⃣ تنفيذ أوامر PowerShell على VPS داخل Tailnet
       - name: Run commands on Tailnet host
         run: |
           echo "✅ Connected successfully to a06-de-monam.tailabd540.ts.net"
-          # مثال: تشغيل أوامر PowerShell أو CMD على VPS
-          # يمكنك هنا إضافة أي أمر تحتاجه
+          # مثال: تشغيل أي أوامر PowerShell على الجهاز
+          # يمكنك هنا إضافة أي script أو curl أو ssh حسب حاجتك
