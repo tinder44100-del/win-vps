@@ -28,9 +28,9 @@ jobs:
         run: |
           Write-Host "Downloading Tailscale EXE installer..."
           Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-ipn-setup.exe" -OutFile "$env:TEMP\tailscale-setup.exe"
-          Write-Host "Installing Tailscale..."
-          Start-Process "$env:TEMP\tailscale-setup.exe" -ArgumentList "/quiet" -Wait
-          Write-Host "✅ Tailscale installed."
+         Write-Host "Installing Tailscale..."
+         Start-Process "$env:TEMP\tailscale-setup.exe" -ArgumentList "/quiet" -Wait
+         Write-Host "✅ Tailscale installed."
 
       # 4️⃣ Connect Tailscale using Ephemeral Auth Key
       - name: Connect Tailscale
