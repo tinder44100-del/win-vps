@@ -10,12 +10,13 @@ jobs:
       - name: Install Tailscale
         run: |
           choco install tailscale -y
-          # تحديث PATH للتأكد أن tailscale معروف
-          refreshenv
 
       - name: Start Tailscale
         run: |
-          tailscale up --authkey kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV --hostname github-vps
+          # إضافة مسار Tailscale للبيئة الحالية
+          $env:PATH += ";C:\Program Files\Tailscale IPN"
+          # تشغيل Tailscale باستخدام المسار الكامل أو PATH
+          & "C:\Program Files\Tailscale IPN\tailscale.exe" up --authkey kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV --hostname github-vps
 
       - name: Enable RDP
         run: |
