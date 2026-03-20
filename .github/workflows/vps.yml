@@ -1,4 +1,4 @@
-name: Tailscale Windows Connect via OAuth Client
+name: Tailscale Windows Connect Stable
 
 on:
   workflow_dispatch:
@@ -12,32 +12,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Connect Tailscale باستخدام OAuth client
-      - name: Connect Tailscale via OAuth Client
+      # 2️⃣ Verify Windows version
+      - name: Check Windows version
+        run: |
+          $ver = (Get-ComputerInfo -Property WindowsVersion).WindowsVersion
+          Write-Host "Windows Version: $ver"
+          if ([version]$ver -lt [version]"10.0") { 
+            Write-Error "Windows 10 or later is required!"
+          }
+
+      # 3️⃣ Install Tailscale using EXE installer
+      - name: Download & Install Tailscale
+        run: |
+          Write-Host "Downloading Tailscale EXE installer..."
+          Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-ipn-setup.exe" -OutFile "$env:TEMP\tailscale-setup.exe"
+          Write-Host "Installing Tailscale..."
+          Start-Process "$env:TEMP\tailscale-setup.exe" -ArgumentList "/quiet" -Wait
+          Write-Host "Tailscale installed."
+
+      # 4️⃣ Connect Tailscale with Ephemeral Auth Key
+      - name: Connect Tailscale
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}       # Client ID
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}      # Client secret
-          tags: "tag:github-runner"                                        # tag يبدأ بـ tag:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}   # Ephemeral reusable auth key
+          tags: "tag:github-runner"                   # ✅ صيغة صحيحة
           hostname: "github-vps"
           ping: "a06-de-monam.tailabd540.ts.net"
 
-      # 3️⃣ التحقق من الاتصال بالجهاز
-      - name: Verify Tailscale Connection
+      # 5️⃣ Verify Tailscale connection
+      - name: Verify Connection
         run: |
-          echo "Checking connection to Tailnet host..."
           tailscale status
           tailscale ping a06-de-monam.tailabd540.ts.net
 
-      # 4️⃣ إنشاء مستخدم RDP بصلاحيات المسؤول (اختياري)
+      # 6️⃣ Enable RDP user
       - name: Enable RDP
         run: |
           net user runneradmin Pass123! /add
           net localgroup administrators runneradmin /add
           echo "✅ RDP user created"
 
-      # 5️⃣ تنفيذ أوامر PowerShell على VPS داخل Tailnet
+      # 7️⃣ Run PowerShell commands on VPS
       - name: Run commands on Tailnet host
         run: |
           echo "✅ Connected successfully to a06-de-monam.tailabd540.ts.net"
-          # مثال: أي أوامر PowerShell أو CMD على الجهاز
+          # أضف هنا أي أوامر PowerShell تريد تنفيذها بعد الاتصال
