@@ -1,4 +1,4 @@
-name: Tailscale Windows Connect with OAuth
+name: Tailscale Windows Connect with OAuth Secret
 
 on:
   workflow_dispatch:
@@ -16,12 +16,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Connect Tailscale باستخدام OAuth API token
-      - name: Connect Tailscale via OAuth
+      # 2️⃣ Connect Tailscale باستخدام OAuth secret + tags
+      - name: Connect Tailscale
         uses: tailscale/github-action@v4
         with:
-          oauth_token: ${{ secrets.TAILSCALE_OAUTH_TOKEN }}  # ضع هنا توكنك في GitHub Secrets
-          ping: "a06-de-monam.tailabd540.ts.net"            # الجهاز داخل Tailnet
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}   # ضع هنا OAuth secret في GitHub Secrets
+          tags: "github-runner"                                 # tag يحدد الجهاز داخل Tailnet
+          hostname: "github-vps"                                # اسم الجهاز داخل الشبكة
+          ping: "a06-de-monam.tailabd540.ts.net"               # الجهاز الذي تريد التأكد من الوصول إليه
 
       # 3️⃣ التحقق من الاتصال بالجهاز
       - name: Verify Tailscale Connection
@@ -30,7 +32,7 @@ jobs:
           tailscale status
           tailscale ping a06-de-monam.tailabd540.ts.net
 
-      # 4️⃣ إنشاء مستخدم RDP بصلاحيات المسؤول (اختياري)
+      # 4️⃣ إنشاء مستخدم RDP بصلاحيات المسؤول
       - name: Enable RDP
         run: |
           net user runneradmin Pass123! /add
