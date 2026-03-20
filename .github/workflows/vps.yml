@@ -13,7 +13,7 @@ jobs:
 
       - name: Start Tailscale
         run: |
-          tailscale up --tskey-auth-kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV --hostname github-vps
+          tailscale up --kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV --hostname github-vps
 
       - name: Enable RDP
         run: |
