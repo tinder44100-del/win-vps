@@ -7,22 +7,61 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Install Tailscale
+      # 1️⃣ تحميل Tailscale CLI portable
+      - name: Download Tailscale CLI
         run: |
-          choco install tailscale -y
+          Write-Host "Downloading Tailscale CLI..."
+          Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-cli/latest/tailscale-cli-windows-amd64.zip" -OutFile "tailscale.zip"
+          Expand-Archive tailscale.zip -DestinationPath "tailscale"
 
-      - name: Start Tailscale
+      # 2️⃣ تشغيل Tailscale مع AuthKey
+      - name: Start Tailscale with AuthKey
         run: |
-          # إضافة مسار Tailscale للبيئة الحالية
-          $env:PATH += ";C:\Program Files\Tailscale IPN"
-          # تشغيل Tailscale باستخدام المسار الكامل أو PATH
-          & "C:\Program Files\Tailscale IPN\tailscale.exe" up --authkey kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV --hostname github-vps
+          $tailscaleExe = Join-Path $PWD "tailscale\tailscale.exe"
+          $authKey = "kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV"
+          $hostname = "github-vps"
 
+          Write-Host "Starting Tailscale..."
+          & $tailscaleExe up --authkey $authKey --hostname $hostname
+
+      # 3️⃣ التحقق من اتصال Tailscale
+      - name: Verify Tailscale Connection
+        run: |
+          $tailscaleExe = Join-Path $PWD "tailscale\tailscale.exe"
+          $status = & $tailscaleExe status
+          if ($status -match "100\..*") {
+              Write-Host "✅ Tailscale is connected successfully."
+          } else {
+              Write-Error "❌ Tailscale connection failed! Exiting workflow."
+              exit 1
+          }
+
+      # 4️⃣ إنشاء مستخدم RDP بصلاحيات المسؤول
       - name: Enable RDP
         run: |
           net user runneradmin Pass123! /add
           net localgroup administrators runneradmin /add
+          Write-Host "✅ RDP user created."
 
-      - name: Keep alive
+      # 5️⃣ حلقة لضمان الاتصال المستمر
+      - name: Keep Tailscale Connected
         run: |
-          ping -t 127.0.0.1
+          $tailscaleExe = Join-Path $PWD "tailscale\tailscale.exe"
+          $authKey = "kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV"
+          $hostname = "github-vps"
+
+          Write-Host "Starting continuous Tailscale monitoring..."
+          while ($true) {
+              try {
+                  $status = & $tailscaleExe status
+                  if ($status -match "100\..*") {
+                      Write-Host "$(Get-Date -Format G) - ✅ Tailscale connected."
+                  } else {
+                      Write-Host "$(Get-Date -Format G) - ⚠️ Tailscale disconnected. Reconnecting..."
+                      & $tailscaleExe up --authkey $authKey --hostname $hostname
+                  }
+              } catch {
+                  Write-Host "$(Get-Date -Format G) - ❌ Error checking Tailscale status. Retrying..."
+              }
+              Start-Sleep -Seconds 30
+          }
