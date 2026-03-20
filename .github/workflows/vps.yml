@@ -1,4 +1,4 @@
-name: Tailscale Windows Connect Stable
+name: Stable Tailscale Windows Connect
 
 on:
   workflow_dispatch:
@@ -12,29 +12,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Verify Windows version
+      # 2️⃣ Check Windows version (corrected)
       - name: Check Windows version
         run: |
-          $ver = (Get-ComputerInfo -Property WindowsVersion).WindowsVersion
-          Write-Host "Windows Version: $ver"
-          if ([version]$ver -lt [version]"10.0") { 
-            Write-Error "Windows 10 or later is required!"
+          $release = (Get-ComputerInfo).WindowsVersion
+          Write-Host "Windows Release: $release"
+          if ([int]$release -lt 10) {
+              Write-Error "Windows 10 or later is required!"
+          } else {
+              Write-Host "✅ Windows 10 or later detected."
           }
 
-      # 3️⃣ Install Tailscale using EXE installer
+      # 3️⃣ Download & Install Tailscale EXE
       - name: Download & Install Tailscale
         run: |
           Write-Host "Downloading Tailscale EXE installer..."
           Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-ipn-setup.exe" -OutFile "$env:TEMP\tailscale-setup.exe"
           Write-Host "Installing Tailscale..."
           Start-Process "$env:TEMP\tailscale-setup.exe" -ArgumentList "/quiet" -Wait
-          Write-Host "Tailscale installed."
+          Write-Host "✅ Tailscale installed."
 
-      # 4️⃣ Connect Tailscale with Ephemeral Auth Key
+      # 4️⃣ Connect Tailscale using Ephemeral Auth Key
       - name: Connect Tailscale
         uses: tailscale/github-action@v4
         with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}   # Ephemeral reusable auth key
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}   # Ephemeral Reusable Auth Key
           tags: "tag:github-runner"                   # ✅ صيغة صحيحة
           hostname: "github-vps"
           ping: "a06-de-monam.tailabd540.ts.net"
@@ -52,7 +54,7 @@ jobs:
           net localgroup administrators runneradmin /add
           echo "✅ RDP user created"
 
-      # 7️⃣ Run PowerShell commands on VPS
+      # 7️⃣ Run PowerShell commands on Tailnet host
       - name: Run commands on Tailnet host
         run: |
           echo "✅ Connected successfully to a06-de-monam.tailabd540.ts.net"
