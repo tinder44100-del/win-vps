@@ -1,61 +1,38 @@
-name: windows-vps
+name: Tailscale Connect Workflow
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  build:
-    runs-on: windows-latest
+  connect:
+    runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ تثبيت Tailscale عبر Chocolatey
-      - name: Install Tailscale
-        run: |
-          choco install tailscale -y
-          refreshenv  # تحديث PATH داخل الخطوة نفسها
+      # 1️⃣ Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # 2️⃣ تشغيل Tailscale مع AuthKey
-      - name: Start Tailscale
-        run: |
-          $authKey = "kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV"
-          $hostname = "github-vps"
-          Write-Host "Starting Tailscale..."
-          tailscale up --authkey $authKey --hostname $hostname
+      # 2️⃣ Connect Tailscale باستخدام Action الرسمي
+      - name: Connect Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          ping: "a06-de-monam.tailabd540.ts.net"   # الجهاز المستهدف داخل Tailnet
 
-      # 3️⃣ التحقق من اتصال Tailscale
+      # 3️⃣ التحقق من الاتصال بالجهاز
       - name: Verify Tailscale Connection
         run: |
-          $status = tailscale status
-          if ($status -match "100\..*") {
-              Write-Host "✅ Tailscale is connected successfully."
-          } else {
-              Write-Error "❌ Tailscale connection failed! Exiting workflow."
-              exit 1
-          }
+          echo "Checking connection to Tailnet host..."
+          tailscale status
+          tailscale ping a06-de-monam.tailabd540.ts.net
 
-      # 4️⃣ إنشاء مستخدم RDP بصلاحيات المسؤول
-      - name: Enable RDP
+      # 4️⃣ تنفيذ أوامر على الجهاز داخل Tailnet
+      - name: Run commands on Tailnet host
         run: |
-          net user runneradmin Pass123! /add
-          net localgroup administrators runneradmin /add
-          Write-Host "✅ RDP user created."
-
-      # 5️⃣ حلقة لضمان الاتصال المستمر
-      - name: Keep Tailscale Connected
-        run: |
-          $authKey = "kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV"
-          $hostname = "github-vps"
-          Write-Host "Starting continuous Tailscale monitoring..."
-          while ($true) {
-              try {
-                  $status = tailscale status
-                  if ($status -match "100\..*") {
-                      Write-Host "$(Get-Date -Format G) - ✅ Tailscale connected."
-                  } else {
-                      Write-Host "$(Get-Date -Format G) - ⚠️ Tailscale disconnected. Reconnecting..."
-                      tailscale up --authkey $authKey --hostname $hostname
-                  }
-              } catch {
-                  Write-Host "$(Get-Date -Format G) - ❌ Error checking Tailscale status. Retrying..."
-              }
-              Start-Sleep -Seconds 30
-          }
+          echo "✅ Connected successfully to a06-de-monam.tailabd540.ts.net"
+          # هنا يمكنك إضافة أي أوامر تريد تنفيذها على VPS
+          # مثال: curl, ssh, أو أي script
