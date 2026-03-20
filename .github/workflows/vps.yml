@@ -1,0 +1,25 @@
+name: windows-vps
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Install Tailscale
+        run: |
+          choco install tailscale -y
+
+      - name: Start Tailscale
+        run: |
+          tailscale up --tskey-auth-kk3h6m4U6G11CNTRL-C5Vk4VYx6FY65N9D7owtEYVtCeAzaYCwV --hostname github-vps
+
+      - name: Enable RDP
+        run: |
+          net user runneradmin Pass123! /add
+          net localgroup administrators runneradmin /add
+
+      - name: Keep alive
+        run: |
+          ping -t 127.0.0.1
